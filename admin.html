@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>USWAG E-MARKET · TSKI Admin Portal</title>
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0A1F6E">
 <meta name="robots" content="noindex">
 <link rel="manifest" href="manifest-admin.json">
@@ -386,6 +387,12 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
 @keyframes bannerIn { from { transform: translateY(120%); opacity: 0; } }
 @keyframes bannerOut { to { transform: translateY(120%); opacity: 0; } }
 
+/* ---------- Home link ---------- */
+.home-link { flex-shrink: 0; color: var(--forest); border: 1.5px solid var(--line); border-radius: 11px; padding: 7px; }
+.home-link svg { width: 20px; height: 20px; }
+.auth-home { display: inline-flex; gap: 6px; align-items: center; font-weight: 650; color: var(--leaf); text-decoration: none; margin-bottom: 10px; }
+.auth-home svg { width: 18px; height: 18px; }
+
 </style>
 <style>
   .side { background: #0A1F6E; }
@@ -453,10 +460,11 @@ window.APP_CONFIG = {
         body: JSON.stringify({ action, data: data || {}, token: S.token() }),
       });
     } catch (e) {
-      throw new Error('No internet connection. Check your signal and try again.');
+      throw new Error(navigator.onLine === false ? 'No internet connection. Check your signal and try again.'
+        : "Can't reach the USWAG server right now. Please try again in a moment.");
     }
     let out;
-    try { out = await res.json(); } catch (e) { throw new Error('The server did not respond properly. Try again in a moment.'); }
+    try { out = await res.json(); } catch (e) { throw new Error("The server didn't respond properly. Please try again in a moment."); }
     if (!out.ok) {
       if (out.code === 'AUTH' && S.token()) { S.setToken(null); setTimeout(() => location.reload(), 1200); }
       throw new Error(out.error || 'Something went wrong.');
@@ -581,6 +589,10 @@ window.APP_CONFIG = {
     tool: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.5 2.5-2.5-2.5z"/>',
   };
   S.icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" aria-hidden="true">${P[name] || ''}</svg>`;
+
+  // ---------- Home (back to the landing page) ----------
+  S.homeBtn = () => `<a class="btn icon home-link" href="index.html" aria-label="Home page" title="Home page">${S.icon('home')}</a>`;
+  S.homeLink = () => `<a class="auth-home" href="index.html">${S.icon('back')} Home page</a>`;
 
   // ---------- Tabs ----------
   S.tabbar = function (tabs, current, onPick) {
@@ -806,12 +818,12 @@ window.APP_CONFIG = {
   ];
 
   async function boot() {
-    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center"><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
+    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center">${S.homeLink()}<p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
     if (!S.token()) return renderLogin();
     renderShell();
   }
   function renderLogin() {
-    app.innerHTML = `<div class="auth"><img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:100px;height:100px;border-radius:50%">
+    app.innerHTML = `<div class="auth">${S.homeLink()}<img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:100px;height:100px;border-radius:50%">
       <h1 class="center">TSKI Admin Portal</h1><p class="auth-sub">USWAG E-MARKET · Microenterprise financing, marketplace and settlement</p>
       <form class="stack" id="f"><label class="field"><span>Username</span><input class="input" name="username" autocomplete="username" required></label>
       <label class="field"><span>Password</span><input class="input" type="password" name="password" autocomplete="current-password" required></label><button class="btn block mango">Log in</button></form>
@@ -821,12 +833,12 @@ window.APP_CONFIG = {
   function renderShell() {
     app.innerHTML = `<div class="admin"><nav class="side" id="side" aria-label="Sections"><div class="brand"><img src="img/logo-96.png" alt=""><div>USWAG E-MARKET<small>TSKI ADMIN PORTAL</small></div></div>
       <label class="field" style="padding:0 6px 6px"><span style="color:rgba(255,255,255,.7)">Branch</span><select class="input" id="br" style="background:#162E86;color:#fff;border-color:#2A47A6"><option value="">All branches</option>${S.info.branches.map(b => `<option value="${esc(b.BranchID)}">${esc(b.Name)}</option>`).join('')}</select></label>
-      <div id="menu"></div><div style="margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:10px"><button id="pw">Change password</button><button id="out">Log out</button></div>
+      <div id="menu"></div><div style="margin-top:18px;border-top:1px solid rgba(255,255,255,.12);padding-top:10px"><button id="hp">Home page</button><button id="pw">Change password</button><button id="out">Log out</button></div>
       <p style="font-size:11px;opacity:.5;padding:16px 12px 0">Technology partner:<br>CodeSphere IT Solutions</p></nav>
-      <main class="main"><div class="main-head"><div class="row"><button class="btn icon menu-btn" id="mb" aria-label="Menu">${icon('menu')}</button><h1 id="title"></h1></div><div id="actions" class="row wrap"></div></div><div id="view"></div></main></div>`;
+      <main class="main"><div class="main-head"><div class="row"><button class="btn icon menu-btn" id="mb" aria-label="Menu">${icon('menu')}</button>${S.homeBtn()}<h1 id="title"></h1></div><div id="actions" class="row wrap"></div></div><div id="view"></div></main></div>`;
     $('#br').value = st.branch;
     $('#br').onchange = e => { st.branch = e.target.value; reload(); };
-    $('#pw').onclick = S.changePassword; $('#out').onclick = S.logout;
+    $('#hp').onclick = () => { location.href = 'index.html'; }; $('#pw').onclick = S.changePassword; $('#out').onclick = S.logout;
     $('#mb').onclick = () => $('#side').classList.toggle('open');
     show(st.view); badges();
   }
