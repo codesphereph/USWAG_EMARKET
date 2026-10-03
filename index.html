@@ -8,6 +8,7 @@
 <meta property="og:title" content="USWAG E-MARKET">
 <meta property="og:description" content="Empowering Local Trade, One Click at a Time.">
 <meta property="og:image" content="img/logo-512.png">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0A1F6E">
 <link rel="manifest" href="manifest-customer.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -390,6 +391,12 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
 @keyframes bannerIn { from { transform: translateY(120%); opacity: 0; } }
 @keyframes bannerOut { to { transform: translateY(120%); opacity: 0; } }
 
+/* ---------- Home link ---------- */
+.home-link { flex-shrink: 0; color: var(--forest); border: 1.5px solid var(--line); border-radius: 11px; padding: 7px; }
+.home-link svg { width: 20px; height: 20px; }
+.auth-home { display: inline-flex; gap: 6px; align-items: center; font-weight: 650; color: var(--leaf); text-decoration: none; margin-bottom: 10px; }
+.auth-home svg { width: 18px; height: 18px; }
+
 </style>
 <style>
   body.lp { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; background: #fff; }
@@ -510,7 +517,7 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
 </div></header>
 
 <footer class="lp-foot"><div class="w"><span>USWAG E-MARKET · A microenterprise ecosystem for Taytay Sa Kauswagan, Inc. (TSKI)<span id="sup"></span> · <a href="admin.html">TSKI Admin</a></span>
-  <span class="cs">Technology partner <img src="img/codesphere.png" alt="CodeSphere IT Solutions"></span></div></footer>
+  <a class="cs" href="#partner" data-panel="partner" style="text-decoration:none;color:inherit">Technology partner <img src="img/codesphere.png" alt="CodeSphere IT Solutions"></a></div></footer>
 
 <div class="lp-modal" id="lpModal" hidden><div class="lp-box" role="dialog" aria-modal="true" aria-labelledby="lpTitle">
   <button class="btn icon lp-close" id="lpClose" aria-label="Close"></button>
@@ -584,6 +591,18 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
     </div>
     <div class="row wrap" style="margin-top:24px"><a class="btn mango lg" href="customer.html">Start shopping</a><span class="muted">No account needed to order.</span></div>
   </section>
+
+  <section class="panel" data-id="partner" hidden>
+    <h2>Technology partner</h2>
+    <p class="intro-p">USWAG E-MARKET was designed and built by CodeSphere IT Solutions, Iloilo City. Your digital partner for a smarter tomorrow.</p>
+    <img src="img/codesphere-card.jpg" alt="CodeSphere IT Solutions: custom apps, POS systems, systems development, free consultation. R. Mapa St., Mandurriao, Iloilo City. codesphereph@gmail.com. 0908 142 3830." style="width:100%;border-radius:16px;margin-top:18px;border:1px solid var(--line)">
+    <div class="g3" style="margin-top:18px">
+      <a class="box" href="tel:09081423830" style="text-decoration:none;color:inherit"><h3>Phone</h3><p>0908 142 3830</p></a>
+      <a class="box" href="mailto:codesphereph@gmail.com" style="text-decoration:none;color:inherit"><h3>Email</h3><p>codesphereph@gmail.com</p></a>
+      <div class="box"><h3>Address</h3><p>R. Mapa St., Mandurriao, Iloilo City, 5000</p></div>
+    </div>
+    <p class="small muted" style="margin-top:14px">Custom apps · POS systems · Systems development · Free consultation</p>
+  </section>
 </div></div>
 
 <script>
@@ -616,10 +635,11 @@ window.APP_CONFIG = {
         body: JSON.stringify({ action, data: data || {}, token: S.token() }),
       });
     } catch (e) {
-      throw new Error('No internet connection. Check your signal and try again.');
+      throw new Error(navigator.onLine === false ? 'No internet connection. Check your signal and try again.'
+        : "Can't reach the USWAG server right now. Please try again in a moment.");
     }
     let out;
-    try { out = await res.json(); } catch (e) { throw new Error('The server did not respond properly. Try again in a moment.'); }
+    try { out = await res.json(); } catch (e) { throw new Error("The server didn't respond properly. Please try again in a moment."); }
     if (!out.ok) {
       if (out.code === 'AUTH' && S.token()) { S.setToken(null); setTimeout(() => location.reload(), 1200); }
       throw new Error(out.error || 'Something went wrong.');
@@ -744,6 +764,10 @@ window.APP_CONFIG = {
     tool: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.5 2.5-2.5-2.5z"/>',
   };
   S.icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" aria-hidden="true">${P[name] || ''}</svg>`;
+
+  // ---------- Home (back to the landing page) ----------
+  S.homeBtn = () => `<a class="btn icon home-link" href="index.html" aria-label="Home page" title="Home page">${S.icon('home')}</a>`;
+  S.homeLink = () => `<a class="auth-home" href="index.html">${S.icon('back')} Home page</a>`;
 
   // ---------- Tabs ----------
   S.tabbar = function (tabs, current, onPick) {
@@ -978,7 +1002,7 @@ window.APP_CONFIG = {
       : '<p class="muted">Verified TSKI entrepreneurs are being onboarded for the pilot.</p>';
   }).catch(() => { document.getElementById('shopList').innerHTML = '<p class="muted">Open the <a href="customer.html">marketplace</a> to see all merchants.</p>'; });
 
-  const modal = document.getElementById('lpModal'), box = modal.querySelector('.lp-box'), IDS = TABS.map(t => t[0]);
+  const modal = document.getElementById('lpModal'), box = modal.querySelector('.lp-box'), IDS = TABS.map(t => t[0]).concat(['partner']);
   document.getElementById('lpClose').innerHTML = S.icon('x');
   const setNavH = () => document.documentElement.style.setProperty('--navh', document.querySelector('.nav').offsetHeight + 'px');
   setNavH(); addEventListener('resize', setNavH);
