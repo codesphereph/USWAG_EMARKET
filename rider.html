@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest-rider.json">
 <link rel="icon" href="icons/icon-rider-192.png">
 <link rel="apple-touch-icon" href="icons/icon-rider-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="USWAG Rider">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,6 +389,12 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
 @keyframes bannerIn { from { transform: translateY(120%); opacity: 0; } }
 @keyframes bannerOut { to { transform: translateY(120%); opacity: 0; } }
 
+/* ---------- Home link ---------- */
+.home-link { flex-shrink: 0; color: var(--forest); border: 1.5px solid var(--line); border-radius: 11px; padding: 7px; }
+.home-link svg { width: 20px; height: 20px; }
+.auth-home { display: inline-flex; gap: 6px; align-items: center; font-weight: 650; color: var(--leaf); text-decoration: none; margin-bottom: 10px; }
+.auth-home svg { width: 18px; height: 18px; }
+
 </style>
 <style>
   .cashcard { background: linear-gradient(135deg, #0A1F6E, #0B5ED0); color: #fff; border-radius: var(--r-lg); padding: 16px 18px; }
@@ -439,10 +446,11 @@ window.APP_CONFIG = {
         body: JSON.stringify({ action, data: data || {}, token: S.token() }),
       });
     } catch (e) {
-      throw new Error('No internet connection. Check your signal and try again.');
+      throw new Error(navigator.onLine === false ? 'No internet connection. Check your signal and try again.'
+        : "Can't reach the USWAG server right now. Please try again in a moment.");
     }
     let out;
-    try { out = await res.json(); } catch (e) { throw new Error('The server did not respond properly. Try again in a moment.'); }
+    try { out = await res.json(); } catch (e) { throw new Error("The server didn't respond properly. Please try again in a moment."); }
     if (!out.ok) {
       if (out.code === 'AUTH' && S.token()) { S.setToken(null); setTimeout(() => location.reload(), 1200); }
       throw new Error(out.error || 'Something went wrong.');
@@ -567,6 +575,10 @@ window.APP_CONFIG = {
     tool: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.5 2.5-2.5-2.5z"/>',
   };
   S.icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" aria-hidden="true">${P[name] || ''}</svg>`;
+
+  // ---------- Home (back to the landing page) ----------
+  S.homeBtn = () => `<a class="btn icon home-link" href="index.html" aria-label="Home page" title="Home page">${S.icon('home')}</a>`;
+  S.homeLink = () => `<a class="auth-home" href="index.html">${S.icon('back')} Home page</a>`;
 
   // ---------- Tabs ----------
   S.tabbar = function (tabs, current, onPick) {
@@ -787,7 +799,7 @@ window.APP_CONFIG = {
   let poll = null;
 
   async function boot() {
-    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center"><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
+    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center">${S.homeLink()}<p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
     if (!S.token()) return renderAuth('login');
     try { st.me = await api('riderMe'); } catch (e) { return renderAuth('login'); }
     app.innerHTML = `<div class="shell"><header class="topbar" id="top"></header><main class="page" id="page"></main></div>`;
@@ -795,7 +807,7 @@ window.APP_CONFIG = {
   }
 
   function renderAuth(mode) {
-    app.innerHTML = `<div class="auth"><img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:110px;height:110px;border-radius:50%">
+    app.innerHTML = `<div class="auth">${S.homeLink()}<img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:110px;height:110px;border-radius:50%">
       <h1 class="center" style="margin-top:6px">TSKI Rider</h1><p class="auth-sub">Deliver orders from local entrepreneurs in your municipality.</p>
       <div class="seg" style="margin-bottom:18px"><button data-m="login" class="${mode === 'login' ? 'on' : ''}">Log in</button><button data-m="signup" class="${mode === 'signup' ? 'on' : ''}">Apply as rider</button></div>
       ${mode === 'login' ? `<form class="stack" id="f"><label class="field"><span>Mobile number</span><input class="input" name="mobile" inputmode="tel" required placeholder="09171234567"></label>
@@ -811,7 +823,7 @@ window.APP_CONFIG = {
     $$('[data-m]').forEach(b => b.onclick = () => renderAuth(b.dataset.m));
     const f = $('#f');
     f.onsubmit = e => { e.preventDefault(); busy(f.querySelector('button.btn.block'), async () => {
-      if (mode === 'signup') { const r = await api('riderSignup', S.form(f)); app.innerHTML = `<div class="auth center"><h1>Salamat!</h1><p class="auth-sub">${esc(r.message)}</p><button class="btn" id="bk">Back to log in</button></div>`; $('#bk').onclick = () => renderAuth('login'); return; }
+      if (mode === 'signup') { const r = await api('riderSignup', S.form(f)); app.innerHTML = `<div class="auth center">${S.homeLink()}<h1>Salamat!</h1><p class="auth-sub">${esc(r.message)}</p><button class="btn" id="bk">Back to log in</button></div>`; $('#bk').onclick = () => renderAuth('login'); return; }
       const r = await api('riderLogin', S.form(f)); S.setToken(r.token); boot();
     }); };
   }
@@ -820,7 +832,7 @@ window.APP_CONFIG = {
   function drawTabs() { S.tabbar(TABS.map(t => t.id === 'active' && st.active.length ? Object.assign({}, t, { badge: st.active.length }) : t), st.tab, go); }
   function topbar() {
     const on = st.me.Availability === 'Online';
-    $('#top').innerHTML = `<img src="img/logo-96.png" alt="" style="width:34px;height:34px;border-radius:50%"><div class="grow"><b style="font-family:var(--display);font-size:17px;color:var(--forest)">Hi, ${esc(st.me.Name.split(' ')[0])}</b><div class="small muted">${st.me.todayDeliveries} today · ${esc(st.me.branchName)}</div></div>
+    $('#top').innerHTML = S.homeBtn() + `<img src="img/logo-96.png" alt="" style="width:34px;height:34px;border-radius:50%"><div class="grow"><b style="font-family:var(--display);font-size:17px;color:var(--forest)">Hi, ${esc(st.me.Name.split(' ')[0])}</b><div class="small muted">${st.me.todayDeliveries} today · ${esc(st.me.branchName)}</div></div>
       <button class="btn sm ${on ? 'leaf' : 'ghost'}" id="on" aria-pressed="${on}">${on ? 'Online' : 'Offline'}</button>`;
     $('#on').onclick = e => busy(e.currentTarget, async () => { const r = await api('setAvailability', { availability: on ? 'Offline' : 'Online' }); st.me.Availability = r.Availability; topbar(); if (st.tab === 'jobs') loadJobs(); });
   }
