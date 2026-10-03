@@ -1,0 +1,33 @@
+{
+  "name": "USWAG E-MARKET Admin",
+  "short_name": "TSKI Admin",
+  "description": "TSKI admin portal for USWAG E-MARKET.",
+  "id": "./admin.html",
+  "start_url": "./admin.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0A1F6E",
+  "theme_color": "#0A1F6E",
+  "lang": "en-PH",
+  "icons": [
+    {
+      "src": "icons/icon-admin-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-admin-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-admin-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
