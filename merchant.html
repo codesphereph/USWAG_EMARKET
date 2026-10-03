@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest-merchant.json">
 <link rel="icon" href="icons/icon-merchant-192.png">
 <link rel="apple-touch-icon" href="icons/icon-merchant-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="USWAG Merchant">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,11 +389,19 @@ table.data td.r, table.data th.r { text-align: right; font-variant-numeric: tabu
 @keyframes bannerIn { from { transform: translateY(120%); opacity: 0; } }
 @keyframes bannerOut { to { transform: translateY(120%); opacity: 0; } }
 
+/* ---------- Home link ---------- */
+.home-link { flex-shrink: 0; color: var(--forest); border: 1.5px solid var(--line); border-radius: 11px; padding: 7px; }
+.home-link svg { width: 20px; height: 20px; }
+.auth-home { display: inline-flex; gap: 6px; align-items: center; font-weight: 650; color: var(--leaf); text-decoration: none; margin-bottom: 10px; }
+.auth-home svg { width: 18px; height: 18px; }
+
 </style>
 <style>
   .brand-u { display: flex; align-items: center; gap: 9px; font-family: var(--display); font-weight: 800; font-size: 18px; color: var(--forest); }
   .brand-u img { width: 38px; height: 38px; border-radius: 50%; }
   .brand-u span { color: var(--leaf); font-weight: 700; }
+  .brand-u { white-space: nowrap; min-width: 0; }
+  @media (max-width: 420px) { .brand-u span { display: none; } }
   .loan { background: linear-gradient(135deg, #0A1F6E, #0B5ED0); color: #fff; border-radius: var(--r-lg); padding: 18px; }
   .loan .lbl { font-size: 12.5px; opacity: .8; }
   .loan b.big { font-family: var(--display); font-size: 30px; display: block; line-height: 1.1; }
@@ -447,10 +456,11 @@ window.APP_CONFIG = {
         body: JSON.stringify({ action, data: data || {}, token: S.token() }),
       });
     } catch (e) {
-      throw new Error('No internet connection. Check your signal and try again.');
+      throw new Error(navigator.onLine === false ? 'No internet connection. Check your signal and try again.'
+        : "Can't reach the USWAG server right now. Please try again in a moment.");
     }
     let out;
-    try { out = await res.json(); } catch (e) { throw new Error('The server did not respond properly. Try again in a moment.'); }
+    try { out = await res.json(); } catch (e) { throw new Error("The server didn't respond properly. Please try again in a moment."); }
     if (!out.ok) {
       if (out.code === 'AUTH' && S.token()) { S.setToken(null); setTimeout(() => location.reload(), 1200); }
       throw new Error(out.error || 'Something went wrong.');
@@ -575,6 +585,10 @@ window.APP_CONFIG = {
     tool: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.5 2.5-2.5-2.5z"/>',
   };
   S.icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" aria-hidden="true">${P[name] || ''}</svg>`;
+
+  // ---------- Home (back to the landing page) ----------
+  S.homeBtn = () => `<a class="btn icon home-link" href="index.html" aria-label="Home page" title="Home page">${S.icon('home')}</a>`;
+  S.homeLink = () => `<a class="auth-home" href="index.html">${S.icon('back')} Home page</a>`;
 
   // ---------- Tabs ----------
   S.tabbar = function (tabs, current, onPick) {
@@ -796,7 +810,7 @@ window.APP_CONFIG = {
   let poll = null;
 
   async function boot() {
-    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center"><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
+    try { await S.loadInfo(); } catch (e) { app.innerHTML = `<div class="auth center">${S.homeLink()}<p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`; return; }
     if (!S.token()) return renderAuth('login');
     try { st.me = await api('merchantMe'); } catch (e) { return renderAuth('login'); }
     route();
@@ -806,7 +820,7 @@ window.APP_CONFIG = {
     clearInterval(poll);
     const bar = $('.tabbar'); if (bar) bar.remove();
     if (st.me.Status === 'Active') return go(st.tab);
-    $('#top').innerHTML = `<div class="brand-u grow"><img src="img/logo-96.png" alt="">USWAG <span>E-MARKET</span></div><button class="btn sm ghost" id="lo">Log out</button>`;
+    $('#top').innerHTML = S.homeBtn() + `<div class="brand-u grow"><img src="img/logo-96.png" alt="">USWAG <span>E-MARKET</span></div><button class="btn sm ghost" id="lo">Log out</button>`;
     $('#lo').onclick = S.logout;
     if (['Draft', 'Incomplete'].indexOf(st.me.Status) >= 0) return renderApplication();
     if (st.me.Status === 'Approved') return renderAgreements();
@@ -816,7 +830,7 @@ window.APP_CONFIG = {
   // ───────────── Auth ─────────────
   function renderAuth(mode) {
     const info = S.info;
-    app.innerHTML = `<div class="auth"><img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:110px;height:110px;border-radius:50%">
+    app.innerHTML = `<div class="auth">${S.homeLink()}<img class="auth-logo" src="img/logo-256.png" alt="USWAG E-MARKET" style="width:110px;height:110px;border-radius:50%">
       <h1 class="center" style="margin-top:6px">USWAG <span style="color:var(--leaf)">E-MARKET</span></h1>
       <p class="auth-sub">For TSKI entrepreneurs: financing, a digital store, TSKI rider delivery and weekly settlement in one app.</p>
       <div class="seg" style="margin-bottom:18px"><button data-m="login" class="${mode === 'login' ? 'on' : ''}">Log in</button><button data-m="signup" class="${mode === 'signup' ? 'on' : ''}">Apply</button></div>
@@ -964,7 +978,7 @@ window.APP_CONFIG = {
     { id: 'money', label: 'Settlement', icon: 'loan' }, { id: 'store', label: 'Store', icon: 'store' }];
   function drawTabs() { const n = st.orders.filter(o => o.Status === 'Pending').length; S.tabbar(TABS.map(t => t.id === 'orders' && n ? Object.assign({}, t, { badge: n }) : t), st.tab, go); }
   function topbar() {
-    $('#top').innerHTML = `<img src="img/logo-96.png" alt="" style="width:34px;height:34px;border-radius:50%"><div class="grow"><div class="brand-u" style="font-size:17px">${esc(st.me.BusinessName)}</div><div class="small muted">${esc(st.me.Category)} · ${esc(st.me.branchName)}</div></div>
+    $('#top').innerHTML = S.homeBtn() + `<img src="img/logo-96.png" alt="" style="width:34px;height:34px;border-radius:50%"><div class="grow"><div class="brand-u" style="font-size:17px">${esc(st.me.BusinessName)}</div><div class="small muted">${esc(st.me.Category)} · ${esc(st.me.branchName)}</div></div>
       <button class="btn sm ${st.me.IsOpen ? 'leaf' : 'ghost'}" id="ob" aria-pressed="${st.me.IsOpen}">${st.me.IsOpen ? 'Open' : 'Closed'}</button>`;
     $('#ob').onclick = e => busy(e.currentTarget, async () => { const r = await api('toggleOpen', { open: !st.me.IsOpen }); st.me.IsOpen = r.IsOpen; topbar(); toast(r.IsOpen ? 'Your store is open.' : 'Your store is closed.'); });
   }
